@@ -18,7 +18,7 @@ from wordcloud import WordCloud
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 # location where the file is stored
-file_path = "/Users/eugenernst/Desktop/C-SCM-DATA-Candidates_Evaluation_Anonymized_SS21.xlsx"
+file_path = "C-SCM-DATA-Candidates_Evaluation_Anonymized_SS21.xlsx"
 
 
 # downloads that are needed for the text processing (downloaded once)
