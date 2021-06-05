@@ -1,11 +1,17 @@
 import re
 import os
 
+import geonamescache
 
 import pandas as pd
 
 
+from tqdm import tqdm
 from nltk.util import ngrams
+from geonamescache.mappers import country
+
+
+
 
 file_path = "/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/C-SCM-DATA-Candidates_Evaluation_Anonymized_SS21.xlsx"
 
@@ -40,6 +46,107 @@ def create_n_grams(data=None, n=3):
     return token_dict, n_gram_dict
 
 
-if __name__ == "__main__":
-    token_dict, grma_dict = create_n_grams()
 
+def get_eval_text(data=None):
+    if data is None:
+        data = pd.read_excel(file_path, engine='openpyxl')
+        data.dropna(axis=0, subset=['Evaluation Statement'], inplace=True)
+
+    eval_statements = data['Evaluation Statement'].values.tolist()
+
+    evaluation_text = " ".join(eval_statements)
+
+    return evaluation_text
+
+
+def get_country_names(text=None):
+    if text is None:
+        text = get_eval_text()
+
+    gc = geonamescache.GeonamesCache()
+    country_names = list(gc.get_countries_by_names().keys())
+
+    countries_in_text = [county for county in tqdm(country_names, desc="Scanning country names within evaluation statements: ") if county.lower() in text.lower()]
+
+    return countries_in_text
+
+
+def get_continents_names(text=None):
+    if text is None:
+        text = get_eval_text()
+
+    gc = geonamescache.GeonamesCache()
+    continent = gc.get_continents()
+    continent_keys = list(continent.keys())
+    key = continent_keys[0]
+    continent[key]['name']
+    continent_names = [continent[key]['name'] for key in tqdm(continent_keys, desc="Scanning continent names within evaluation statements: ") if continent[key]['name'].lower() in text.lower()]
+
+    return continent_names
+
+
+def get_city_names(text=None):
+    if text is None:
+        text = get_eval_text()
+
+    gc = geonamescache.GeonamesCache()
+
+    #country_names = get_country_names(text)
+    #country_iso3_mapper = country(from_key='name', to_key='geonameid')
+    #country_iso3 = [country_iso3_mapper(country_name) for country_name in country_names]
+
+    city_names_dict = gc.get_cities()
+
+    city_names_keys = list(city_names_dict.keys())
+
+    city_names_list = [city_names_dict[key]['name'] for key in tqdm(city_names_keys, desc="Scanning city names within evaluation statements: ") if city_names_dict[key]['name'] in text]
+
+    return city_names_list
+
+
+
+def add_geo_names_to_df(data=None):
+    if data is None:
+        data = pd.read_excel(file_path, engine='openpyxl')
+        data.dropna(axis=0, subset=['Evaluation Statement'], inplace=True)
+
+    continent_names = get_continents_names()
+    country_names = get_country_names()
+    city_names = get_city_names()
+
+    data_columns = data.columns.tolist()
+
+    add_continent_string = lambda s: ", ".join(geo_info for geo_info in continent_names if geo_info in s)
+    continent_series = data['Evaluation Statement'].apply(add_continent_string)
+    continent_series.column = ['Continent']
+
+    add_country_string = lambda s: ", ".join(geo_info for geo_info in country_names if geo_info in s)
+    country_series = data['Evaluation Statement'].apply(add_country_string)
+    country_series.column = ['Country']
+
+    add_city_string = lambda s: ", ".join(geo_info for geo_info in city_names if geo_info in s)
+    city_series = data['Evaluation Statement'].apply(add_city_string)
+    city_series.column = ['City']
+
+    data_goe_info_added = pd.concat([data, continent_series, country_series, city_series], axis=1)
+
+    data_columns = data_columns + ['Continent', 'Country', 'City']
+
+    data_goe_info_added.columns = data_columns
+
+    data_goe_info_added.to_csv("/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/evaluation_data_augmented.xlsx")
+
+    print(data_goe_info_added.head(10))
+
+
+    print('finish georaphic search')
+
+
+
+
+
+
+if __name__ == "__main__":
+
+    data = pd.read_csv("/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/evaluation_data_augmented.xlsx")
+    add_geo_names_to_df()
