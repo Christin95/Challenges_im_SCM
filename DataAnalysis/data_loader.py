@@ -14,7 +14,6 @@ def load_evaluations():
     data = load_data()
     eval_statement_data = data[['Person ID', 'Evaluation Statement']]
 
-
     return eval_statement_data
 
 

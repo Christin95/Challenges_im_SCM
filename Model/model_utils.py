@@ -1,17 +1,21 @@
 import re
 import os
 
+
+import nltk
 import geonamescache
 
 import pandas as pd
-
 
 from tqdm import tqdm
 from nltk.util import ngrams
 from geonamescache.mappers import country
 
 
+from DataAnalysis.data_loader import load_data
 
+
+stopwords = nltk.corpus.stopwords.words("english")
 
 file_path = "/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/C-SCM-DATA-Candidates_Evaluation_Anonymized_SS21.xlsx"
 
@@ -46,15 +50,26 @@ def create_n_grams(data=None, n=3):
     return token_dict, n_gram_dict
 
 
-
-def get_eval_text(data=None):
+def get_eval_text(data=None, merge=True, num_statements=None, remove_stop_words=True, remove_numbers=True):
     if data is None:
         data = pd.read_excel(file_path, engine='openpyxl')
         data.dropna(axis=0, subset=['Evaluation Statement'], inplace=True)
 
+    if num_statements is not None:
+        data = data.iloc[:num_statements]
+
     eval_statements = data['Evaluation Statement'].values.tolist()
 
-    evaluation_text = " ".join(eval_statements)
+    if remove_stop_words:
+        eval_statements = filter_stop_words(eval_statements)
+
+    if remove_numbers:
+        eval_statements = filter_numbers(eval_statements)
+
+
+    if merge:
+        evaluation_text = " ".join(eval_statements)
+
 
     return evaluation_text
 
@@ -105,7 +120,7 @@ def get_city_names(text=None):
 
 
 
-def add_geo_names_to_df(data=None):
+def add_geo_info_to_df(data=None):
     if data is None:
         data = pd.read_excel(file_path, engine='openpyxl')
         data.dropna(axis=0, subset=['Evaluation Statement'], inplace=True)
@@ -134,7 +149,7 @@ def add_geo_names_to_df(data=None):
 
     data_goe_info_added.columns = data_columns
 
-    data_goe_info_added.to_csv("/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/evaluation_data_augmented.xlsx")
+    data_goe_info_added.to_csv("/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/evaluation_data_augmented.csv")
 
     print(data_goe_info_added.head(10))
 
@@ -142,11 +157,18 @@ def add_geo_names_to_df(data=None):
     print('finish georaphic search')
 
 
+def hasNumbers(inputString):
+    return any(char.isdigit() for char in inputString)
 
+def filter_numbers(word_list):
+    return [word for word in word_list if hasNumbers(word) is False]
+
+def filter_stop_words(word_list):
+    return [word for word in word_list if word.lower() not in stopwords]
 
 
 
 if __name__ == "__main__":
 
-    data = pd.read_csv("/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/evaluation_data_augmented.xlsx")
-    add_geo_names_to_df()
+    data = pd.read_csv("/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/evaluation_data_augmented.csv")
+    add_geo_info_to_df()

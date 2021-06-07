@@ -8,8 +8,8 @@ import pandas as pd
 import numpy as np
 
 
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 plt.style.use('seaborn')
 
 
@@ -59,7 +59,6 @@ def filter_numbers(word_list):
 def filter_stop_words(word_list):
     return [word for word in word_list if word.lower() not in stopwords]
 
-
 def prepare_word_list():
     data = pd.read_excel(file_path, engine='openpyxl')
     statements = data['Evaluation Statement'].tolist()
@@ -69,7 +68,7 @@ def prepare_word_list():
         #statement = statements[0]
         if type(statement) == str:
             # remove punctuation marks
-            statement = statement.translate(str.maketrans({a:None for a in string.punctuation}))
+            statement = statement.translate(str.maketrans({a: None for a in string.punctuation}))
             # split statement into single words
             statement_words = nltk.word_tokenize(statement)
             # remove numeric values
