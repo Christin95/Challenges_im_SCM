@@ -1,10 +1,9 @@
 import re
 import os
-
-
+import string
 import nltk
+import spacy
 import geonamescache
-
 import pandas as pd
 
 from tqdm import tqdm
@@ -12,15 +11,29 @@ from nltk.util import ngrams
 from geonamescache.mappers import country
 
 
-from DataAnalysis.data_loader import load_data
-
+from spacy.symbols import ADJ
+from Data.data_loader import load_data
+from PyDictionary import PyDictionary
 
 stopwords = nltk.corpus.stopwords.words("english")
 
-file_path = "/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/C-SCM-DATA-Candidates_Evaluation_Anonymized_SS21.xlsx"
+file_path = "/Data/C-SCM-DATA-Candidates_Evaluation_Anonymized_SS21.xlsx"
 
 
 def create_n_grams(data=None, n=3):
+    """
+
+    Parameters
+    ----------
+    data :
+         (Default value = None)
+    n :
+         (Default value = 3)
+
+    Returns
+    -------
+
+    """
     if data is None:
         data = pd.read_excel(file_path, engine='openpyxl')
         data.dropna(axis=0, subset=['Evaluation Statement'], inplace=True)
@@ -50,9 +63,34 @@ def create_n_grams(data=None, n=3):
     return token_dict, n_gram_dict
 
 
+def get_nlp_lg():
+    """ """
+    nlp_lg = spacy.load('en_core_web_lg')
+    return nlp_lg
+
+
 def get_eval_text(data=None, merge=True, num_statements=None, remove_stop_words=True, remove_numbers=True):
+    """
+
+    Parameters
+    ----------
+    data :
+         (Default value = None)
+    merge :
+         (Default value = True)
+    num_statements :
+         (Default value = None)
+    remove_stop_words :
+         (Default value = True)
+    remove_numbers :
+         (Default value = True)
+
+    Returns
+    -------
+
+    """
     if data is None:
-        data = pd.read_excel(file_path, engine='openpyxl')
+        data = load_data()
         data.dropna(axis=0, subset=['Evaluation Statement'], inplace=True)
 
     if num_statements is not None:
@@ -70,11 +108,21 @@ def get_eval_text(data=None, merge=True, num_statements=None, remove_stop_words=
     if merge:
         evaluation_text = " ".join(eval_statements)
 
-
     return evaluation_text
 
 
 def get_country_names(text=None):
+    """
+
+    Parameters
+    ----------
+    text :
+         (Default value = None)
+
+    Returns
+    -------
+
+    """
     if text is None:
         text = get_eval_text()
 
@@ -87,6 +135,17 @@ def get_country_names(text=None):
 
 
 def get_continents_names(text=None):
+    """
+
+    Parameters
+    ----------
+    text :
+         (Default value = None)
+
+    Returns
+    -------
+
+    """
     if text is None:
         text = get_eval_text()
 
@@ -101,6 +160,17 @@ def get_continents_names(text=None):
 
 
 def get_city_names(text=None):
+    """
+
+    Parameters
+    ----------
+    text :
+         (Default value = None)
+
+    Returns
+    -------
+
+    """
     if text is None:
         text = get_eval_text()
 
@@ -121,6 +191,17 @@ def get_city_names(text=None):
 
 
 def add_geo_info_to_df(data=None):
+    """
+
+    Parameters
+    ----------
+    data :
+         (Default value = None)
+
+    Returns
+    -------
+
+    """
     if data is None:
         data = pd.read_excel(file_path, engine='openpyxl')
         data.dropna(axis=0, subset=['Evaluation Statement'], inplace=True)
@@ -149,7 +230,7 @@ def add_geo_info_to_df(data=None):
 
     data_goe_info_added.columns = data_columns
 
-    data_goe_info_added.to_csv("/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/evaluation_data_augmented.csv")
+    data_goe_info_added.to_csv("/Users/eugenernst/PycharmProjects/Challenges_im_SCM/Data/evaluation_data_augmented.csv")
 
     print(data_goe_info_added.head(10))
 
@@ -158,17 +239,124 @@ def add_geo_info_to_df(data=None):
 
 
 def hasNumbers(inputString):
+    """
+
+    Parameters
+    ----------
+    inputString :
+        
+
+    Returns
+    -------
+
+    """
     return any(char.isdigit() for char in inputString)
 
 def filter_numbers(word_list):
+    """
+
+    Parameters
+    ----------
+    word_list :
+        
+
+    Returns
+    -------
+
+    """
     return [word for word in word_list if hasNumbers(word) is False]
 
 def filter_stop_words(word_list):
+    """
+
+    Parameters
+    ----------
+    word_list :
+        
+
+    Returns
+    -------
+
+    """
     return [word for word in word_list if word.lower() not in stopwords]
 
+def extend_synonyms(word_list):
+    """
+
+    Parameters
+    ----------
+    word_list :
+        
+
+    Returns
+    -------
+
+    """
+    # dictionary of synonyms
+    dictionary = PyDictionary()
+
+    synonym_set = set()
+    for word in word_list:
+        print(word)
+        word = word.replace(" ", "-")
+        try:
+            a = set(dictionary.synonym(word)[:2])
+            synonym_set = synonym_set.union(a)
+        except:
+            print('stopp')
+    synonym_set = set(word_list).union(synonym_set)
+
+    return list(synonym_set)
+
+def get_core_values_synonym_dict():
+    """ """
+
+    open_list = ['open',  'openness', 'outgoing', 'curious', 'open-minded', 'broad-minded', 'honest', 'empathetic', 'respectful', 'positivity', 'emotional intelleligence', 'interest', 'interested', 'adapting' , 'informative', 'sharing', 'feedback', 'honesty', 'trust', 'valuing', 'diversity', 'perspective']
+    open_list = extend_synonyms(open_list)
+
+    responsible_list = ['responsible', 'decisions', 'decision-maker', 'supportive', 'prepared', 'proactive', 'reliable', 'trustworthy', 'discipline', 'respectable', 'committed', 'integrity', 'pushing', 'assertive', 'obligated', 'judicious', 'organized', 'managing', 'consistent']
+    responsible_list = extend_synonyms(responsible_list)
+
+    creative_list = ['creative', 'constructive', 'resourceful', 'imaginative', 'ingenious', 'canny', 'inventive', 'full of ideas', 'clever', 'adventurous', 'innovative', 'originative', 'visionary', 'fanciful', 'forward thinker', 'pioneering', 'fertile', 'mastermind', 'genius', 'go-ahead', 'witty', 'eccentrically', 'inspiring', 'stimulating', 'encouraging', 'full of ideas', 'rich in ideas', 'inspirational']
+    creative_list = extend_synonyms(creative_list)
+
+    entrepreneurial = ['entrepreneurial', 'enterprising', 'entrepreneurially', 'profit-oriented', 'for-profit', 'profit-seeking', 'need for achievement', 'self-efficacy', 'innovativeness', 'stress tolerant', 'need for autonomy', 'proactive', 'disruptive', 'personality', 'venturesome', 'prepared to take risks', 'visionary', 'goal-oriented', 'purposeful', 'active', 'engaged', 'maker', 'doer', 'self-starter', 'calm', 'passionate', 'positive', 'convinced']
+    entrepreneurial = extend_synonyms(entrepreneurial)
+
+    trait_synonym_dict = {'open': open_list, 'responsible': responsible_list, 'creative': creative_list, 'entrepreneurial': entrepreneurial}
+
+    return trait_synonym_dict
 
 
-if __name__ == "__main__":
 
-    data = pd.read_csv("/Users/eugenernst/PycharmProjects/Challenges_im_SCM/DataAnalysis/evaluation_data_augmented.csv")
-    add_geo_info_to_df()
+def filter_adjectives(doc):
+    """
+
+    Parameters
+    ----------
+    doc :
+        
+
+    Returns
+    -------
+
+    """
+    adjectives = list(set([word.text for word in doc if word.head.pos == ADJ]))
+    return adjectives
+
+
+def remove_punctuation(text):
+    """
+
+    Parameters
+    ----------
+    text :
+        
+
+    Returns
+    -------
+
+    """
+    for symb in string.punctuation:
+        text = text.replace(symb, "")
+    return text

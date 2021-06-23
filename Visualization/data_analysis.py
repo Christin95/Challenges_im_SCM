@@ -3,29 +3,25 @@ import re
 import nltk
 import string
 
-
 import pandas as pd
 import numpy as np
-
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 plt.style.use('seaborn')
-
 
 from os.path import join
 from wordcloud import WordCloud
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 # location where the file is stored
-file_path = "C-SCM-DATA-Candidates_Evaluation_Anonymized_SS21.xlsx"
+file_path = "../Data/C-SCM-DATA-Candidates_Evaluation_Anonymized_SS21.xlsx"
 
 
 # downloads that are needed for the text processing (downloaded once)
 #nltk.download('vader_lexicon')
 
 stopwords = nltk.corpus.stopwords.words("english")
-
 
 def evaluator_count(data=None):
     if data is None:
@@ -39,7 +35,6 @@ eval_count = evaluator_count()
 
 # gives the evaluator (index), number of evaluations and count of evaluations which have been agreed by other persons
 eval_count.head(10)
-
 
 
 def create_dir_if_not_exists(dir_path):
@@ -106,6 +101,7 @@ def statement_sentiment(statement):
     polarity_dict = vader.polarity_scores(statement)
     return polarity_dict
 
+
 def sentiment_data():
     data = pd.read_excel(file_path, engine='openpyxl')
     data.dropna(axis=0, inplace=True)
@@ -139,62 +135,6 @@ data['sentiment'] = data['pos'] - data['neg']
 data = data[data['Current Potential']!='tbd']
 
 
-def plot_pie_chart(data, col, save_dir=True):
-    x_data = data[col].value_counts().tolist()
-    labels = data[col].unique().tolist()
-
-    colors = ['#191970', '#001CF0', '#0038E2', '#0055D4', '#0071C6', '#008DB8', '#00AAAA',
-              '#00C69C', '#00E28E', '#00FF80', ]
-    fig, ax = plt.subplots(figsize=(6, 3), subplot_kw=dict(aspect="equal"), )
-    plt.legend(labels=labels, loc="best")
-
-
-    explode = [0.1] * len(labels)
-
-    def func(pct, allvals):
-        absolute = int(round(pct / 100. * np.sum(allvals)))
-        return "{:.1f}%\n({:d})".format(pct, absolute)
-
-    wedges, texts, autotexts = ax.pie(x_data,
-                                      autopct=lambda pct: func(pct, x_data),
-                                      textprops=dict(color="w"),
-                                      explode=explode,
-                                      shadow=True
-                                      )
-
-    ax.legend(wedges, labels,
-              title=col,
-              loc="center left",
-              bbox_to_anchor=(1, 0, 0.5, 1))
-
-    autotexts = [autotext for autotext in autotexts if int(autotext._text.split("\n")[-1][1:-1]) > sum(x_data)*0.05 ]
-    #plt.setp(autotexts, size=8, weight="bold")
-
-    autotexts_small = [autotext for autotext in autotexts if int(autotext._text.split("\n")[-1][1:-1]) < sum(x_data)*0.05 ]
-    #plt.setp(autotexts_small, size=0.1, weight="bold")
-
-
-    if save_dir:
-        save_dir = os.getcwd()
-        for directory in ['plot', "pie_chart"]:
-            save_dir = join(save_dir, directory)
-            create_dir_if_not_exists(save_dir)
-
-        file_name = "pie_chart_{column}.jpg".format(column=col)
-        save_path = join(save_dir, file_name)
-        plt.savefig(save_path)
-
-    plt.show()
-    plt.close()
-
-
-
-#######################################
-#        CREATE PIE PLOTS
-#######################################
-
-for category in ['Current Potential', 'Gender']:
-    plot_pie_chart(data, col=category)
 
 def plot_density(data, col, hue, save_dir=True):
     sns.displot(data, x=col, kind='kde', hue=hue, fill=True)
@@ -345,7 +285,7 @@ sns.kdeplot(data[data['Code'] == max_sentimen]['sentiment'].values, label=max_se
 plt.legend()
 
 
-file_path = join(os.getcwd(), 'plot', "EXAMPLE.jpg")
+file_path = join(os.getcwd(), '../Data/plot', "EXAMPLE.jpg")
 plt.savefig(file_path)
 
 

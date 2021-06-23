@@ -23,6 +23,9 @@ def get_leaership_trait_list():
             element_string = remove_number(element_string)
             trait_list.append(element_string)
 
+
+    print('stop')
+
     return trait_list
 
 
@@ -56,6 +59,8 @@ def get_trait_synonym_list():
 
 
 if __name__ == "__main__":
+
+    leadership_trait_list = get_leaership_trait_list()
     trait_dict = get_trait_synonym_list()
 
     for key in trait_dict.keys():
