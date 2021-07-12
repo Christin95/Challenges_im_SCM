@@ -156,19 +156,13 @@ def add_core_values_similarity(data=None, normalize=True, safe_file=True):
     return data_modified
 
 
-def open_score(eval_string):
-    """
+def word_similarity_score(eval_string, word='open'):
+    if type(eval_string) == list:
+        output = np.mean([nlp_lg(word).similarity(nlp_lg(eval)) for eval in eval_string if eval not in  ["", " "]])
+    else:
+        output = nlp_lg(word).similarity(nlp_lg(eval_string))
 
-    Parameters
-    ----------
-    eval_string :
-        
-
-    Returns
-    -------
-
-    """
-    return nlp_lg('open').similarity(nlp_lg(eval_string))
+    return output
 
 def word_score(word='open', eval_string="hi is the most open guy iin the whole world"):
     """

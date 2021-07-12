@@ -2,9 +2,10 @@ import os
 import pandas as pd
 
 
-file_path = "/Users/eugenernst/PycharmProjects/Challenges_im_SCM/Data/ETweb-Candidates_CORE Evaluation Text Analytics_Anonymized.xlsx"
+file_path = "Data/ETweb-Candidates_CORE Evaluation Text Analytics_Anonymized.xlsx"
 
-file_path_processed = "/Users/eugenernst/PycharmProjects/Challenges_im_SCM/Data/C-SCM-DATA-Candidates_Evaluation_trait_included_SS21.csv"
+file_path_processed = "Data/C-SCM-DATA-Candidates_Evaluation_trait_included_SS21.csv"
+
 
 def load_data():
     data = pd.read_excel(file_path, engine='openpyxl', sheet_name=1)
